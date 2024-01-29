@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org/DTD Mapper 3.0" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.zcx.community.dao.DiscussPostMapper">
+
+    <sql id="selectFields">
+        id, user_id, title, content, type, status, create_time, comment_count, score
+    </sql>
+
+    <sql id="insertFields">
+        user_id, title, content, type, status, create_time, comment_count, score
+    </sql>
+    
+    <!-- 不是Java自带的type，要用resultType声明 -->
+    <select id="selectDiscussPosts" resultType="DiscussPost">
+        select
+        <include refid="selectFields"></include>
+        from discuss_post
+        <!-- status = 2就是拉黑贴 -->
+        where status != 2
+        <if test="userId != 0">
+            and user_id = #{userId}
+        </if>
+        <!-- 置顶排到前面去，1是精华帖，0是普通贴
+            type一样的前提下，按照时间倒序排列，新的帖子在前面 -->
+        order by type desc, create_time desc
+        limit #{offset}, #{limit}
+    </select>
+
+    <select id="selectDiscussPostRows" resultType="int">
+        select count(id)
+        from discuss_post
+        where status != 2
+        <if test="userId != 0">
+            and user_id = #{userId}
+        </if>
+    </select>
+
+    <insert id="insertDiscussPost" parameterType="DiscussPost" keyProperty="id">
+        insert into discuss_post (<include refid="insertFields"></include>)
+        values (#{userId}, #{title}, #{content}, #{type}, #{status}, #{createTime}, #{commentCount}, #{score})
+    </insert>
+
+    <select id="selectDiscussPostById" resultType="DiscussPost">
+        select <include refid="selectFields"></include>
+        from discuss_post
+        where id = #{id}
+    </select>
+
+    <update id="updateCommentCount">
+        update discuss_post set comment_count = #{commentCount}
+        where id = #{id}
+    </update>
+</mapper>
